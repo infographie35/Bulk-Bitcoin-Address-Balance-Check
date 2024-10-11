@@ -4,7 +4,7 @@
 ![screenshot](kayachecker.jpg)!
 
 
-In the image, it says x.py in the test phase, ignore it and run python name.py.
+
 
 <br>
 FOR THE PROGRAM TO WORK, DO NOT FORGET TO OPEN THE ELECTRUM WALLET AND RUN ELECTRUM IN THE BACKGROUND.<br>
