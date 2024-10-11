@@ -87,15 +87,20 @@ Open bitcoin_balance_checker.py in your project folder and update the input_file
 
 python
 Copy code
-input_file = r'C:\path\to\your\bitcoin_addresses.txt'
-output_file = r'C:\path\to\your\log.txt'
+# Define input and output file paths
+input_file = r'c:\\Your _path\\bitcoin_addresses.txt'
+positive_balance_file = r'c:\\Your _path\\walletwithbalance.txt'
+failure_file = r'c:\\Your _path\\failure.txt'
+# Electrum path
+electrum_path = r'c:\\Your _path\\electrum-4.5.5-portable.exe'
+
 These variables specify the path to the file with the input addresses and the path to the file where the results will be saved.
 
 Run kayachecker.py using your Python interpreter:
 
     python kayachecker.py
 
-The script will check each Bitcoin address through Electrum and record the results in a file called log.txt.
+The script will check each Bitcoin address through Electrum and positive balance will be recorded in a file called walletwithbalance.txt.
 
 <h2>Requirements</h2>
 To use this project you need the following requirements:
