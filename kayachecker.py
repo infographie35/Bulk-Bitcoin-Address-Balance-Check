@@ -13,7 +13,6 @@ print("Github: @kayaaicom")
 
 # Define input and output file paths
 input_file = r'c:\\Your _path\\bitcoin_addresses.txt'
-output_file = r'c:\\Your _path\\log.txt'
 positive_balance_file = r'c:\\Your _path\\walletwithbalance.txt'
 failure_file = r'c:\\Your _path\\failure.txt'
 # Electrum path
