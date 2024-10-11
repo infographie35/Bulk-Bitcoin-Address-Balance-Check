@@ -68,22 +68,9 @@ Overall, the updated version of the code is more user-friendly, resilient, and i
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 Clone your project files to your computer or download and extract the ZIP file.
 
 Create a text file called bitcoin_addresses.txt and add the Bitcoin addresses you want to check, line by line.
-
-Open bitcoin_balance_checker.py in your project folder and update the input_file and output_file variables:
 
 python
 Copy code
@@ -106,9 +93,11 @@ The script will check each Bitcoin address through Electrum and positive balance
 To use this project you need the following requirements:
 
 Python (version 3.x recommended)
-Electrum wallet (you must have a workable version of Electrum installed on your computer)
+electrum-4.5.5-portable.exe
+
 Contribution
 If you would like to contribute to this project or report issues, please create issues or pull requests via the GitHub repository.
+This code includes a time estimation method inspired by the jk_timest project
 
 <h2>License</h2>
 This project is licensed under the MIT License.
