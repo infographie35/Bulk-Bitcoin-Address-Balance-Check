@@ -1,6 +1,7 @@
 <h1>Bitcoin Address Balance Check</h1>
 
-![Uploading kayachecker.jpg…]()
+
+![screenshot](kayachecker.jpg)!
 
 
 In the image, it says x.py in the test phase, ignore it and run python name.py.
