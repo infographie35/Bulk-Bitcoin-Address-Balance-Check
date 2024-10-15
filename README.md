@@ -37,7 +37,7 @@ This script, `kayachecker_Safeguard.py`, is inspired by the [Electrum Bitcoin Ad
 
 ### External Tools
 
-- **Electrum (v4.5.5 or later)**: The script relies on Electrum's CLI to check Bitcoin wallet balances. Ensure you have Electrum installed and specify its correct path in the script.
+- **Electrum portable (v4.5.5)**: The script relies on Electrum's CLI to check Bitcoin wallet balances. Ensure you have Electrum installed and specify its correct path in the script.
 
 ### Input Files
 
