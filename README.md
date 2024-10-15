@@ -1,111 +1,162 @@
-<h1>Bitcoin Address Balance Check</h1>
+<h1>Bulk Bitcoin Address Balance Check</h1>
+
+![Profil Picture](https://raw.githubusercontent.com/kayaaicom/Electrum-Bitcoin-Address-Balance-Checker/main/test.png)
 
 
-![screenshot](kayachecker.jpg)!
+**Bulk Bitcoin Address Balance Check**
+
+Here's the updated version formatted for GitHub as a markdown file (`README.md`):
 
 
+# Bulk Bitcoin Address Balance Check
+
+This script, `kayachecker_Safeguard.py`, is inspired by the [Electrum Bitcoin Address Balance Checker](https://github.com/kayaaicom/Electrum-Bitcoin-Address-Balance-Checker) and builds upon it to provide additional safeguards and fault-tolerant execution. It automates the process of checking Bitcoin wallet balances using Electrum, ensuring reliability through safeguard checks for both internet connectivity and Electrum availability. The script can resume from where it left off in case of failure and provides time estimates for task completion.
+
+## Features
+
+- **Safeguard Mechanism**: Ensures that both the internet connection and Electrum are available before checking wallet balances.
+- **Address Validation**: Automatically validates Bitcoin addresses to ensure only valid ones are processed.
+- **Failure Handling**: Logs progress in a `failure.txt` file, allowing you to resume from the last processed wallet or start over after a failure.
+- **Balance Checking**: Uses Electrum's command-line interface to check Bitcoin wallet balances and logs addresses with positive balances.
+- **Time Estimation**: Provides real-time estimates of the remaining time required to process the remaining wallets.
+- **Multiprocessing**: Processes multiple wallet checks simultaneously to improve efficiency and speed.
+
+## Requirements
+
+### Python Modules
+
+- Standard Python libraries:
+  - `subprocess`
+  - `os`
+  - `time`
+  - `socket`
+  - `datetime`
+  - `multiprocessing`
+  - `json`
+  - `collections`
+
+### External Tools
+
+- **Electrum (v4.5.5 or later)**: The script relies on Electrum's CLI to check Bitcoin wallet balances. Ensure you have Electrum installed and specify its correct path in the script.
+
+### Input Files
+
+- **`bitcoin_addresses.txt`**: A text file containing the list of Bitcoin addresses to be checked. Each address should be on a new line.
+
+### Output Files
+
+- **`walletwithbalance.txt`**: Logs all Bitcoin addresses that have a positive balance.
+- **`failure.txt`**: Tracks the last processed wallet and the number of wallets already checked. This allows the script to resume from the last known wallet after an interruption.
+- **`Potentially_not_checked.txt`**: Logs wallets that might not have been checked in case of an error or a failure, along with the nearby wallets for easy cross-referencing.
+
+## How to Use
+
+### 1. Setup
+
+1. Install **Electrum** (version 4.5.5 or later) and ensure it is available in the path specified in the script.
+2. Prepare a text file (`bitcoin_addresses.txt`) with the Bitcoin addresses you want to check, each address on a new line.
+
+### 2. Configure Paths
+
+In the script, adjust the paths for your files and Electrum executable:
+
+```python
+input_file = r'c:\\your_path\\bitcoin_addresses.txt'
+positive_balance_file = r'c:\\your_path\\walletwithbalance.txt'
+failure_file = r'c:\\your_path\\failure.txt'
+potentially_not_checked_file = r'c:\\your_path\\Potentially_not_checked.txt'
+electrum_path = r'c:\\your_path\\electrum-4.5.5-portable.exe'
 
 
-<br>
-FOR THE PROGRAM TO WORK, DO NOT FORGET TO OPEN THE ELECTRUM WALLET AND RUN ELECTRUM IN THE BACKGROUND.<br>
-<br>
-This Python script is used to check the balances of a large number of Bitcoin addresses via Electrum. Below you can find detailed information on how to use this project.
+### 3. Run the Script
 
-<h2>User Guide</h1>
-Summary of the Updated Code Compared to the Original
+After configuring the paths, simply run the script in your Python environment:
 
-1. Improved Wallet Processing and Tracking
+```bash
+python kayachecker_Safeguard.py
+```
 
-Failure Recovery: The updated code has improved functionality to handle failures gracefully. It creates a file named failure.txt to record progress, including the last successfully processed wallet and the number of wallets already processed. This allows users to either resume from where they left off or restart from the beginning if an interruption occurs.
+### 4. Handling Failures
 
-In the original version, there wasn't as robust a mechanism for resuming after failure.
+If the script encounters a failure (e.g., a loss of internet connection or Electrum unavailability), it logs the last processed wallet in `failure.txt`. Upon restarting, the script will prompt you to either:
 
-2. Estimated Remaining Time Calculation
+- **Start Over**: Reset the failure log and begin checking wallets from the start.
+- **Resume**: Continue from where the script left off, using the data from `failure.txt`.
 
-Time Estimator Class: The updated code includes a TimeEstimator class that calculates an estimated remaining time for the wallet processing. It uses a rolling average of the last 200 wallets to provide a more accurate estimate of time remaining, which is displayed during processing.
+### 5. Output
 
-The original version lacked this feature entirely, offering no information about how long the script would take to complete processing.
+Below is a preview of the expected output files generated by the script.
 
-3. Handling Invalid Bitcoin Addresses
+#### `walletwithbalance.txt`
 
-Validation Step: The updated code adds a validation step using the is_valid_bitcoin_address() function to check each address's validity before processing. Any invalid addresses are listed, and the user is given a 10-second countdown before proceeding with valid addresses.
+```plaintext
+Address: 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa, Balance: 50.00000000 BTC
+Address: 3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy, Balance: 0.35000000 BTC
+```
 
-The original version did not include this validation step, which could lead to wasted time and errors when trying to process invalid addresses.
+This file logs all Bitcoin addresses that have a positive balance, including the balance amounts.
 
-4. Output Files and Their Purpose
+#### `failure.txt`
 
-Positive Balance File (walletwithbalance.txt): This file stores Bitcoin addresses that have a non-zero balance. It allows users to easily identify which addresses contain funds.
+```plaintext
+Last Recorded Wallet : 3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy
+Number of Processed Wallets : 120
+```
 
-The original version also had this feature.
+This file logs the last successfully processed wallet and the number of wallets already checked. This allows the script to resume from where it left off in case of failure.
 
-Failure File (failure.txt): This is a new addition in the updated code. It records the last processed wallet and the number of wallets processed. This file is crucial for resuming processing after an interruption, providing an option to either start fresh or continue from the last point.
+#### `Potentially_not_checked.txt` 
+(for example if you lost electrum RPC or internet connection)
+```plaintext
+----------------------------------------
+Date, Time: 2024-10-14 13:45:22
+1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa
+3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy
+bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8kjgc
+bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+```
 
-The original version lacked such a mechanism for handling interruptions, forcing users to restart from scratch after any failure.
+This file logs potentially unchecked Bitcoin wallets if the script encountered an error, along with some surrounding wallets for reference.
 
-5. User Interaction for Resuming
+## Principles
 
-Choice to Resume or Restart: The updated code asks the user if they want to resume from where they left off or start over if a failure file is detected. This user-friendly prompt helps in continuing the process smoothly without manual intervention.
+### Reliability
+The script verifies internet connectivity and Electrum's availability before proceeding with any operation. It continually monitors these conditions during execution to ensure no wallets are skipped due to downtime.
 
-The original version did not provide this flexibility, and users would have to manually handle interruptions.
+### Fault Tolerance
+If a failure occurs (e.g., network disconnection or Electrum failure), the script logs the last processed wallet and allows you to either start fresh or resume from where it left off.
 
-6. Concurrency and Parallel Processing
+### Efficiency
+The script uses multiprocessing to check multiple wallets simultaneously, significantly reducing the time required to complete the task.
 
-Worker Pool: Both versions of the code use multiprocessing (Pool) to process multiple wallets concurrently. However, the updated version has more structured handling of shared state variables (counter, processed_wallets) for remaining and processed wallets, reducing the chances of errors.
+### Time Management
+The script estimates the remaining time to process all wallets based on the average processing time of the last few wallets, giving real-time feedback on how long it will take to complete.
 
-Files Created by the Code
+## Technical Breakdown
 
-walletwithbalance.txt: Stores Bitcoin addresses that have a positive balance.
+### Modules and Functions
 
-failure.txt: Records the last processed wallet and the number of wallets already processed. It allows the user to resume processing after an interruption.
+- **Safeguard Check**: 
+  - `safeguard_check()`: Continuously monitors internet and Electrum availability, and waits for recovery if either is down.
 
-Key Differences in Code Approach
+- **Address Validation**:
+  - `is_valid_bitcoin_address(address)`: Checks whether a Bitcoin address is valid by confirming its format based on known Bitcoin address structures.
 
-Time Tracking: The updated version uses the TimeEstimator class to estimate the remaining time, which significantly improves user experience by providing better transparency on the duration.
+- **Balance Checking**:
+  - `check_balance(address)`: Interacts with Electrum to fetch the balance of a given Bitcoin address.
 
-Error Handling: The updated code is more robust in terms of handling errors and interruptions, providing a way to resume progress without starting over.
+- **Failure Handling**:
+  - `handle_failure_file()`: Reads and writes to `failure.txt`, allowing the script to resume from the last processed wallet or reset.
 
-Input Validation: The updated code validates all Bitcoin addresses before processing, saving time and preventing errors.
+- **Time Estimation**:
+  - `TimeEstimator`: Estimates the time required to finish processing all remaining wallets based on the average processing time of previously checked wallets.
 
-Overall, the updated version of the code is more user-friendly, resilient, and informative, offering a better experience with features like time estimation, failure recovery, and input validation.
+- **Multiprocessing**:
+  - Uses Python’s `multiprocessing.Pool` to handle multiple wallet checks in parallel, increasing overall efficiency.
 
+## License
 
+This project is licensed under the MIT License – see the LICENSE file for details.
+```
 
-Clone your project files to your computer or download and extract the ZIP file.
-
-Create a text file called bitcoin_addresses.txt and add the Bitcoin addresses you want to check, line by line.
-
-python
-Copy code
-# Define input and output file paths
-input_file = r'c:\\Your _path\\bitcoin_addresses.txt'
-positive_balance_file = r'c:\\Your _path\\walletwithbalance.txt'
-failure_file = r'c:\\Your _path\\failure.txt'
-# Electrum path
-electrum_path = r'c:\\Your _path\\electrum-4.5.5-portable.exe'
-
-These variables specify the path to the file with the input addresses and the path to the file where the results will be saved.
-
-Run kayachecker.py using your Python interpreter:
-
-    python kayachecker.py
-
-The script will check each Bitcoin address through Electrum and positive balance will be recorded in a file called walletwithbalance.txt.
-
-<h2>Requirements</h2>
-To use this project you need the following requirements:
-
-Python (version 3.x recommended)
-electrum-4.5.5-portable.exe
-
-Contribution
-If you would like to contribute to this project or report issues, please create issues or pull requests via the GitHub repository.
-This code includes a time estimation method inspired by the jk_timest project
-
-<h2>License</h2>
-This project is licensed under the MIT License.
-
-All tools and information contained herein are presented or made available for the sole purpose of securing legal remedies. I do not undertake any illegal action on your part. FOR PURELY EDUCATIONAL PURPOSES.
-
-<h3>Support:</h3>
-<p><a href="https://www.buymeacoffee.com/kayaaicom"> <img align="left" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="50" width="210" alt="kayaaicom" /></a></p><br><br>
-<br><img src="https://bitcoin.org/img/icons/logotop.svg?1687792074" width="100" alt="BTC"><h4>1KAYAaiM83LP6BuviwsHRjvkXepMhy4nop</h4>
+This should format correctly when uploaded to GitHub as a `README.md` file. Let me know if you'd like any further changes!
