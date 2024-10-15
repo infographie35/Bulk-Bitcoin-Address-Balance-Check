@@ -1,26 +1,20 @@
 import subprocess
-from multiprocessing import Pool
-import json
 import os
 import time
+import socket
+import datetime
+from multiprocessing import Pool
+import json
 from collections import deque
 
-print("Github: @kayaaicom")
-
-# This code includes a time estimation method inspired by the jk_timest project:
-# https://github.com/jkpubsrc/python-module-jk-timest
-
-
-# Define input and output file paths
-input_file = r'c:\\Your _path\\bitcoin_addresses.txt'
-positive_balance_file = r'c:\\Your _path\\walletwithbalance.txt'
-failure_file = r'c:\\Your _path\\failure.txt'
-# Electrum path
-electrum_path = r'c:\\Your _path\\electrum-4.5.5-portable.exe'
-
+# File paths
+input_file = r'c:\\your_path\\bitcoin_addresses.txt'
+positive_balance_file = r'c:\\your_path\\walletwithbalance.txt'
+failure_file = r'c:\\your_path\\failure.txt'
+potentially_not_checked_file = r'c:\\your_path\\Potentially_not_checked.txt'
+electrum_path = r'c:\\your_path\\electrum-4.5.5-portable.exe'
 
 class TimeEstimator:
-#Edit as you wish - the time estimator track the processing times of the last 200 wallets
     def __init__(self, max_samples=200):
         self.times = deque(maxlen=max_samples)
         self.start_time = time.time()
@@ -30,15 +24,50 @@ class TimeEstimator:
 
     def estimate_remaining_time(self, remaining_tasks):
         if len(self.times) == 0:
-            return None  # Not enough data to estimate
+            return None
         avg_time_per_task = sum(self.times) / len(self.times)
         remaining_time = avg_time_per_task * remaining_tasks
         return remaining_time
 
+# Safeguard: check for internet and Electrum availability
+def safeguard_check():
+    def is_internet_available():
+        try:
+            socket.create_connection(("8.8.8.8", 53), timeout=3)
+            return True
+        except OSError:
+            return False
+
+    def is_electrum_available():
+        try:
+            result = subprocess.run([electrum_path, '--version'], capture_output=True, text=True)
+            return result.returncode == 0
+        except Exception:
+            return False
+
+    was_down = False
+
+    while True:
+        internet_ok = is_internet_available()
+        electrum_ok = is_electrum_available()
+
+        if internet_ok and electrum_ok:
+            if was_down:
+                print("Internet and Electrum are back online. Starting in 30 seconds...")
+                for i in range(30, 0, -1):
+                    print(f"Resuming in {i} seconds...", end="\r")
+                    time.sleep(1)
+                was_down = False
+            break
+        else:
+            if not internet_ok:
+                print("No internet connection. Waiting...")
+            if not electrum_ok:
+                print("Electrum is unavailable. Waiting...")
+            was_down = True
+            time.sleep(2)
+
 def is_valid_bitcoin_address(address: str) -> bool:
-    """
-    Validates a Bitcoin address based on starting characters and length.
-    """
     if address.startswith('1') and 26 <= len(address) <= 35:
         return True
     elif address.startswith('3') and 34 <= len(address) <= 35:
@@ -49,9 +78,6 @@ def is_valid_bitcoin_address(address: str) -> bool:
         return False
 
 def print_ignored_addresses(ignored_addresses: list):
-    """
-    Prints the ignored addresses and displays a countdown before program execution continues.
-    """
     if ignored_addresses:
         print("\nThe following lines in the input file were ignored because they are not valid Bitcoin addresses:")
         for address in ignored_addresses:
@@ -65,14 +91,9 @@ def print_ignored_addresses(ignored_addresses: list):
         print("bitcoin_addresses.txt - wallets integrity checked and all good")
 
 def check_balance(address: str) -> tuple[bool, str]:
-    """
-    Check the balance of a Bitcoin address using Electrum.
-    """
+    safeguard_check()
     try:
-        result = subprocess.run(
-            [electrum_path, 'getaddressbalance', address], 
-            capture_output=True, text=True
-        )
+        result = subprocess.run([electrum_path, 'getaddressbalance', address], capture_output=True, text=True)
         if result.returncode == 0:
             return True, result.stdout.strip()
         else:
@@ -80,13 +101,30 @@ def check_balance(address: str) -> tuple[bool, str]:
     except Exception as e:
         return False, str(e)
 
-def log_result(result: tuple[bool, str, str], counter: list, processed_wallets: list, time_estimator: TimeEstimator):
-    """
-    Log the result of the balance check, estimate remaining time, and update failure.txt.
-    """
-    success, wallet_address, message = result
+def log_potentially_not_checked(last_wallet_address, addresses):
+    if last_wallet_address not in addresses:
+        print(f"Error: Last recorded wallet {last_wallet_address} not found in addresses list.")
+        return
+    
+    # Find the index of the last recorded wallet
+    last_index = addresses.index(last_wallet_address)
 
-    # Increment the number of processed wallets and save progress in failure.txt
+    # Get 3 wallets before and 3 after the last recorded wallet
+    start_index = max(0, last_index - 3)
+    end_index = min(len(addresses), last_index + 4)
+
+    nearby_wallets = addresses[start_index:end_index]
+
+    # Log to potentially_not_checked.txt with date and time
+    with open(potentially_not_checked_file, 'a') as f:
+        f.write(f"\n----------------------------------------\n")
+        f.write(f"Date, Time: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        for wallet in nearby_wallets:
+            f.write(f"{wallet}\n")
+    print("Logged potentially unchecked wallets to Potentially_not_checked.txt")
+
+def log_result(result: tuple[bool, str, str], counter: list, processed_wallets: list, time_estimator: TimeEstimator, addresses: list):
+    success, wallet_address, message = result
     processed_wallets[0] += 1
     with open(failure_file, 'w') as f:
         f.write(f"Last Recorded Wallet : {wallet_address}\n")
@@ -107,18 +145,15 @@ def log_result(result: tuple[bool, str, str], counter: list, processed_wallets: 
             log_message = f"Address: {wallet_address}, Error parsing balance: {str(e)}"
     else:
         log_message = f"Address: {wallet_address}, Error: {message}"
+        log_potentially_not_checked(wallet_address, addresses)
 
     print(log_message)
 
-    # Decrement the counter for remaining wallets
     counter[0] -= 1
-
-    # Calculate time elapsed for this wallet
     elapsed_time = time.time() - time_estimator.start_time
     time_estimator.start_time = time.time()
     time_estimator.update(elapsed_time)
 
-    # Estimate remaining time
     remaining_time = time_estimator.estimate_remaining_time(counter[0])
     if remaining_time is not None:
         remaining_hours = int(remaining_time // 3600)
@@ -127,66 +162,79 @@ def log_result(result: tuple[bool, str, str], counter: list, processed_wallets: 
     else:
         print(f"Remaining wallets to process: {counter[0]} - Remaining time under calculation")
 
-def worker(address: str, counter: list, processed_wallets: list, time_estimator: TimeEstimator) -> tuple[bool, str, str]:
-    """
-    Worker function to check the balance of a single Bitcoin address.
-    """
+def worker(address: str, counter: list, processed_wallets: list, time_estimator: TimeEstimator, addresses: list) -> tuple[bool, str, str]:
     success, message = check_balance(address)
     return success, address, message
 
 def handle_failure_file():
     """
-    Handle the presence of failure.txt, prompting the user to either ignore or continue from it.
+    Handle the presence of failure.txt, check if last_wallet_address is empty, 
+    and prompt the user to process bitcoin_addresses.txt from the beginning or review their data.
     """
-    print("""
-    We found a progress file (failure.txt) from your last run.
-    failure.txt tracks the Last Recorded Wallet processed and the Number of Processed Wallets.
+    last_wallet_address = None
+    processed_wallets = 0
 
-    Would you like to:
-    [Y] Ignore the file and start from the beginning? 
-        (This will discard your previous progress, reset the processed wallet count, and start fresh)
-    [N] Continue from where you left off? 
-        (This will resume scanning from the last recorded address)
-    """)
+    # Read the failure.txt and check if it's correctly formatted
+    try:
+        with open(failure_file, 'r') as f:
+            lines = f.readlines()
+            if len(lines) >= 2:
+                last_wallet_line = lines[0].strip().split(': ')
+                processed_wallets_line = lines[1].strip().split(': ')
 
-    choice = input("Please type Y for Yes or N for No: ").strip().upper()
+                if len(last_wallet_line) == 2:
+                    last_wallet_address = last_wallet_line[1]
+
+                if len(processed_wallets_line) == 2 and processed_wallets_line[1].isdigit():
+                    processed_wallets = int(processed_wallets_line[1])
+    except Exception as e:
+        print(f"Error reading failure.txt: {e}")
     
+    if not last_wallet_address:
+        print("Warning: last_wallet_address is empty or failure.txt is malformed.")
+        return None, 0
+
+    print(f"Last recorded wallet: {last_wallet_address}")
+    print(f"Number of wallets processed: {processed_wallets}")
+
+    # Prompt user to continue from the last wallet or start over
+    choice = input("""
+    Failure file detected:
+    [Y] Start over and reset failure.txt?
+    [N] Continue from the last recorded wallet?
+    Please enter Y or N: """).strip().upper()
+
     if choice == 'Y':
-        # Reset failure.txt and start fresh
         with open(failure_file, 'w') as f:
             f.write("Last Recorded Wallet : \n")
             f.write("Number of Processed Wallets : 0\n")
-        print("Starting fresh. Previous progress has been discarded.")
-        return None, 0  # No wallet to resume, processed_wallets = 0
+        print("Resetting progress. Starting from the beginning.")
+        return None, 0  # Reset to start from the beginning
 
     elif choice == 'N':
-        # Continue from where it left off
-        with open(failure_file, 'r') as f:
-            last_wallet_address = f.readline().strip().split(': ')[1]
-            processed_wallets = int(f.readline().strip().split(': ')[1])
-        print(f"Resuming from wallet {last_wallet_address}.")
+        print("Continuing from the last recorded wallet.")
         return last_wallet_address, processed_wallets
-    
     else:
-        print("Invalid input. Please type Y for Yes or N for No.")
-        return handle_failure_file()  # Retry on invalid input
+        print("Invalid input. Please enter Y or N.")
+        return handle_failure_file()  # Retry if input is invalid
 
 if __name__ == '__main__':
-    # Check if input file exists
+    safeguard_check()
+
     if not os.path.exists(input_file):
         print(f"Error: Input file {input_file} does not exist.")
         exit(1)
 
-    # Read addresses from the input file
     with open(input_file, 'r') as f:
         addresses = f.read().splitlines()
 
-    # If failure.txt exists, ask the user whether to reset or continue
+    # Sanitize input file: filter out empty lines or lines that contain only whitespace
+    addresses = [addr for addr in addresses if addr.strip()]
+
     last_wallet_address, processed_wallets = None, 0
     if os.path.exists(failure_file):
         last_wallet_address, processed_wallets = handle_failure_file()
 
-    # If failure.txt was ignored, validate the addresses
     if last_wallet_address is None:
         valid_addresses = []
         ignored_addresses = []
@@ -199,7 +247,6 @@ if __name__ == '__main__':
         print_ignored_addresses(ignored_addresses)
         addresses = valid_addresses
 
-    # Start processing addresses
     if last_wallet_address:
         last_index = addresses.index(last_wallet_address) if last_wallet_address in addresses else 0
     else:
@@ -207,7 +254,7 @@ if __name__ == '__main__':
 
     total_wallets = len(addresses)
     remaining_wallets = total_wallets - processed_wallets
-    print(f"Total wallets to process: {remaining_wallets}")
+    print(f"Total wallets to process: {total_wallets}")
     print(f"Remaining wallets to process: {remaining_wallets}")
 
     counter = [remaining_wallets]
@@ -217,8 +264,9 @@ if __name__ == '__main__':
 
     pool = Pool(5)
     for i, address in enumerate(addresses[last_index:], start=last_index):
-        pool.apply_async(worker, args=(address, counter, processed_wallets_list, time_estimator), 
-                         callback=lambda result: log_result(result, counter, processed_wallets_list, time_estimator))
+        safeguard_check()
+        pool.apply_async(worker, args=(address, counter, processed_wallets_list, time_estimator, addresses), 
+                         callback=lambda result: log_result(result, counter, processed_wallets_list, time_estimator, addresses))
 
     pool.close()
     pool.join()
