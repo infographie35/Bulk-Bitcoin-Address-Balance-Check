@@ -3,9 +3,7 @@
 ![Profil Picture](https://raw.githubusercontent.com/kayaaicom/Electrum-Bitcoin-Address-Balance-Checker/main/test.png)
 
 
-**Bulk Bitcoin Address Balance Check**
 
-Here's the updated version formatted for GitHub as a markdown file (`README.md`):
 
 
 # Bulk Bitcoin Address Balance Check
