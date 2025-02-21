@@ -19,20 +19,6 @@ This script, `kayachecker_Safeguard.py`, is inspired by the [Electrum Bitcoin Ad
 - **Time Estimation**: Provides real-time estimates of the remaining time required to process the remaining wallets.
 - **Multiprocessing**: Processes multiple wallet checks simultaneously to improve efficiency and speed.
 
-## Requirements
-
-### Python Modules
-
-- Standard Python libraries:
-  - `subprocess`
-  - `os`
-  - `time`
-  - `socket`
-  - `datetime`
-  - `multiprocessing`
-  - `json`
-  - `collections`
-
 ### External Tools
 
 - **Electrum portable (v4.5.5)**: The script relies on Electrum's CLI to check Bitcoin wallet balances. Ensure you have Electrum installed and specify its correct path in the script.
@@ -116,45 +102,3 @@ bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
 
 This file logs potentially unchecked Bitcoin wallets if the script encountered an error, along with some surrounding wallets for reference.
 
-## Principles
-
-### Reliability
-The script verifies internet connectivity and Electrum's availability before proceeding with any operation. It continually monitors these conditions during execution to ensure no wallets are skipped due to downtime.
-
-### Fault Tolerance
-If a failure occurs (e.g., network disconnection or Electrum failure), the script logs the last processed wallet and allows you to either start fresh or resume from where it left off.
-
-### Efficiency
-The script uses multiprocessing to check multiple wallets simultaneously, significantly reducing the time required to complete the task.
-
-### Time Management
-The script estimates the remaining time to process all wallets based on the average processing time of the last few wallets, giving real-time feedback on how long it will take to complete.
-
-## Technical Breakdown
-
-### Modules and Functions
-
-- **Safeguard Check**: 
-  - `safeguard_check()`: Continuously monitors internet and Electrum availability, and waits for recovery if either is down.
-
-- **Address Validation**:
-  - `is_valid_bitcoin_address(address)`: Checks whether a Bitcoin address is valid by confirming its format based on known Bitcoin address structures.
-
-- **Balance Checking**:
-  - `check_balance(address)`: Interacts with Electrum to fetch the balance of a given Bitcoin address.
-
-- **Failure Handling**:
-  - `handle_failure_file()`: Reads and writes to `failure.txt`, allowing the script to resume from the last processed wallet or reset.
-
-- **Time Estimation**:
-  - `TimeEstimator`: Estimates the time required to finish processing all remaining wallets based on the average processing time of previously checked wallets.
-
-- **Multiprocessing**:
-  - Uses Python’s `multiprocessing.Pool` to handle multiple wallet checks in parallel, increasing overall efficiency.
-
-## License
-
-This project is licensed under the MIT License – see the LICENSE file for details.
-```
-
-This should format correctly when uploaded to GitHub as a `README.md` file. Let me know if you'd like any further changes!
